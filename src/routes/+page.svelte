@@ -17,6 +17,7 @@
   let password = $state("");
   let showRecommendModal = $state(false);
   let showAddModal = $state(false);
+
   const ADMIN_PASSWORD = "anime123";
 
   let watchedAnimes = $derived(
