@@ -17,12 +17,10 @@ export default $config({
   },
   async run() {
     new sst.aws.SvelteKit("MyWeb", {
-      ...(process.env.SST_STAGE === "main" && {
-        domain: {
-          name: "anime.themattmayfield.com",
-          dns: sst.cloudflare.dns(),
-        },
-      }),
+      domain: {
+        name: "anime.themattmayfield.com",
+        dns: sst.cloudflare.dns(),
+      },
     });
   },
 });

@@ -20,10 +20,24 @@
   const ADMIN_PASSWORD = "anime123";
 
   let watchedAnimes = $derived(
-    animes.data?.filter((anime) => !anime.isRecommendation) || []
+    animes.data
+      ?.filter((anime) => !anime.isRecommendation)
+      .sort((a, b) => {
+        // Sort in progress items first
+        if (a.inProgress && !b.inProgress) return -1;
+        if (!a.inProgress && b.inProgress) return 1;
+        return 0;
+      }) || []
   );
   let recommendedAnimes = $derived(
-    animes.data?.filter((anime) => anime.isRecommendation) || []
+    animes.data
+      ?.filter((anime) => anime.isRecommendation)
+      .sort((a, b) => {
+        // Sort in progress items first
+        if (a.inProgress && !b.inProgress) return -1;
+        if (!a.inProgress && b.inProgress) return 1;
+        return 0;
+      }) || []
   );
 
   function handleAddAnime() {
@@ -57,122 +71,116 @@
       inProgress: addNewAnime.inProgress,
     });
   }
+
+  function handleSubmit(e: Event) {
+    e.preventDefault();
+    handleAddAnime();
+  }
 </script>
 
-<main class="min-h-screen bg-primary text-noice p-8">
-  <div class="max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold mb-8">Anime Tracker</h1>
-
-    <!-- Action Buttons -->
-    <div class="flex gap-2 mb-8">
+<main class="min-h-screen bg-primary text-noice">
+  <div
+    class="flex items-center justify-between mb-8 border-b border-borders p-4"
+  >
+    <h1 class="text-xl font-bold text-white">MAL</h1>
+    <div class="flex gap-3">
       <Button
+        type="button"
         label="Recommend"
+        variant="outline"
         onclick={() => {
           addNewAnime.isRecommendation = true;
           showRecommendModal = true;
         }}
       />
       <Button
+        type="button"
         label="Add"
+        variant="outline"
         onclick={() => {
           addNewAnime.isRecommendation = false;
           showAddModal = true;
         }}
       />
     </div>
-
-    <!-- Recommend Modal -->
-    {#if showRecommendModal}
+  </div>
+  <div class="max-w-3xl mx-auto">
+    <!-- Modal Template (used for both modals) -->
+    {#if showRecommendModal || showAddModal}
       <div
-        class="fixed inset-0 bg-black/90 flex items-center justify-center"
-        onclick={() => (showRecommendModal = false)}
+        class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        onclick={() =>
+          showRecommendModal
+            ? (showRecommendModal = false)
+            : (showAddModal = false)}
         role="none"
       >
         <div
-          class="bg-secondary p-6 rounded-lg w-96"
+          class="bg-secondary p-8 rounded-xl w-full max-w-md shadow-xl"
           onclick={(e) => e.stopPropagation()}
           role="none"
         >
-          <h2 class="text-xl mb-4">Recommend an Anime</h2>
-          <input
-            type="text"
-            bind:value={addNewAnime.title}
-            placeholder="Anime title"
-            class="w-full px-3 py-2 bg-input rounded text-white mb-4 focus:outline-none"
-          />
-          <div class="flex justify-end gap-2">
-            <Button
-              label="Cancel"
-              onclick={() => {
-                showRecommendModal = false;
-                addNewAnime.title = "";
-              }}
-            />
-            <Button label="Submit" onclick={handleAddAnime} />
-          </div>
+          <form onsubmit={handleSubmit} class="space-y-6">
+            <h2 class="text-2xl font-medium text-white">
+              {showRecommendModal ? "Recommend an Anime" : "Add New Anime"}
+            </h2>
+            <div class="space-y-4">
+              <input
+                type="text"
+                bind:value={addNewAnime.title}
+                placeholder="Anime title"
+                class="w-full px-4 py-2.5 bg-input rounded-md text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              />
+
+              {#if !addNewAnime.isRecommendation}
+                <input
+                  type="number"
+                  bind:value={addNewAnime.rating}
+                  min="1"
+                  max="5"
+                  placeholder="Rating (1-5)"
+                  class="w-full px-4 py-2.5 bg-input rounded-md text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
+                <label class="flex items-center gap-3 text-noice-light">
+                  <input
+                    type="checkbox"
+                    bind:checked={addNewAnime.inProgress}
+                    class="w-5 h-5 rounded border-gray-600"
+                  />
+                  In Progress
+                </label>
+                <input
+                  type="password"
+                  bind:value={password}
+                  placeholder="Enter admin password"
+                  class="w-full px-4 py-2.5 bg-input rounded-md text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                />
+              {/if}
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <Button
+                label="Cancel"
+                type="button"
+                variant="outline"
+                onclick={() => {
+                  showRecommendModal = false;
+                  showAddModal = false;
+                  addNewAnime.title = "";
+                  addNewAnime.rating = undefined;
+                  addNewAnime.inProgress = false;
+                  password = "";
+                }}
+              />
+              <Button label="Submit" type="submit" variant="primary" />
+            </div>
+          </form>
         </div>
       </div>
     {/if}
 
-    <!-- Add Anime Modal -->
-    {#if showAddModal}
-      <div
-        class="fixed inset-0 bg-black/90 flex items-center justify-center"
-        onclick={() => (showAddModal = false)}
-        role="none"
-      >
-        <div
-          class="bg-secondary p-6 rounded-lg w-96"
-          onclick={(e) => e.stopPropagation()}
-          role="none"
-        >
-          <h2 class="text-xl mb-4">Add New Anime</h2>
-          <input
-            type="text"
-            bind:value={addNewAnime.title}
-            placeholder="Anime title"
-            class="w-full px-3 py-2 bg-input rounded text-white mb-4 focus:outline-none"
-          />
-          <input
-            type="number"
-            bind:value={addNewAnime.rating}
-            min="1"
-            max="5"
-            placeholder="Rating (1-5)"
-            class="w-full px-3 py-2 bg-input rounded text-white mb-4 focus:outline-none"
-          />
-          <label class="flex items-center gap-2 mb-4">
-            <input type="checkbox" bind:checked={addNewAnime.inProgress} />
-            In Progress
-          </label>
-          <input
-            type="password"
-            bind:value={password}
-            placeholder="Enter admin password"
-            class="w-full px-3 py-2 bg-input rounded text-white mb-4 focus:outline-none"
-          />
-          <div class="flex justify-end gap-2">
-            <Button
-              label="Cancel"
-              onclick={() => {
-                showAddModal = false;
-                addNewAnime.title = "";
-                addNewAnime.rating = undefined;
-                addNewAnime.inProgress = false;
-                password = "";
-              }}
-            />
-            <Button label="Submit" onclick={handleAddAnime} />
-          </div>
-        </div>
-      </div>
-    {/if}
-
-    <div class="flex flex-col gap-8">
-      <!-- Watched anime list -->
+    <div class="space-y-8">
       <List title="Watched Anime" list={watchedAnimes} />
-
-      <!-- Recommended anime list -->
       <List
         title="Recommended Anime"
         list={recommendedAnimes}
